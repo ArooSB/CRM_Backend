@@ -78,7 +78,7 @@ def create_worker(current_worker):
         role=data['role']
     )
     db.session.add(new_worker)
-    db.session.commit()
+    db.session.commit() # end point user can change the password
 
     return jsonify({"message": "Worker created successfully!"}), 201
 
@@ -121,7 +121,7 @@ def login_worker():
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     }, SECRET_KEY, algorithm="HS256")
 
-    return jsonify({"token": token})
+    return jsonify({"token": token}) # admin login is needed add a conditon so that admin can access everything
 
 
 @bp.route('/workers/<int:id>', methods=['PUT'])
@@ -145,7 +145,7 @@ def update_worker(current_worker, id):
 
     db.session.commit()
 
-    return jsonify({"message": "Worker updated successfully!"})
+    return jsonify({"message": "Worker updated successfully!"}), 201
 
 
 @bp.route('/workers/<int:id>', methods=['DELETE'])

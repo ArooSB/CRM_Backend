@@ -8,7 +8,7 @@ class Worker(db.Model):
 
     __tablename__ = 'workers'
     __table_args__ = {'extend_existing': True}
-    # test comment
+
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
