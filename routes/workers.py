@@ -130,7 +130,7 @@ def update_worker(current_worker, id):
     return jsonify({"message": "Worker updated successfully!"}), 201
 
 
-@bp.route('/workers/<int:id>/password', methods=['PUT'])
+@bp.route('/workers/password/<int:id>', methods=['PUT'])
 @token_required
 def update_worker_password(current_worker, id):
     """Update only the password for the worker."""
