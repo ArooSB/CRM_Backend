@@ -2,6 +2,10 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
+import logging
+from logging import FileHandler
+
 from backend.config import Config
 
 db = SQLAlchemy()
@@ -13,17 +17,14 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-
+    CORS(app)
 
     register_blueprints(app)
-
-
     register_error_handlers(app)
-
+    setup_logging(app)  # Set up logging
     return app
 
 def register_blueprints(app):
@@ -48,3 +49,14 @@ def register_error_handlers(app):
         app.logger.error(f"Internal server error: {error}")
         return jsonify({"message": "Internal server error!"}), 500
 
+def setup_logging(app):
+    if not app.debug:
+        file_handler = FileHandler('app.log')
+        file_handler.setLevel(logging.INFO)
+        app.logger.addHandler(file_handler)
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('Application startup')
+
+    @app.route('/')
+    def index():
+        return jsonify({"message": "Welcome to the CRM API!"})

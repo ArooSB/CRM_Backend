@@ -3,7 +3,6 @@ from backend import db
 from backend.models import Worker
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
-import datetime
 from functools import wraps
 
 bp = Blueprint('workers', __name__)
@@ -13,23 +12,20 @@ SECRET_KEY = 'aroo'
 
 def role_required(role):
     """Decorator to restrict access based on worker role."""
-
     def decorator(f):
         @wraps(f)
         def decorated_function(current_worker, *args, **kwargs):
             if current_worker.role != role:
                 return jsonify({
-                                   "message": "You do not have permission to perform this action!"}), 403
+                    "message": "You do not have permission to perform this action!"
+                }), 403
             return f(current_worker, *args, **kwargs)
-
         return decorated_function
-
     return decorator
 
 
 def token_required(f):
     """Decorator to require a valid JWT token for access."""
-
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get('Authorization')
@@ -42,13 +38,10 @@ def token_required(f):
             current_worker = Worker.query.get(data['worker_id'])
             if not current_worker:
                 return jsonify({"message": "Worker not found!"}), 404
-        except jwt.ExpiredSignatureError:
-            return jsonify({"message": "Token has expired!"}), 403
         except jwt.InvalidTokenError:
             return jsonify({"message": "Token is invalid!"}), 403
 
         return f(current_worker, *args, **kwargs)
-
     return decorated
 
 
@@ -58,9 +51,6 @@ def token_required(f):
 def create_worker(current_worker):
     """Create a new worker account. Only accessible by admin."""
     data = request.get_json()
-
-
-    print(f"{current_worker.username} (ID: {current_worker.worker_id}) is creating a new worker.")
 
     required_fields = ['username', 'password', 'first_name', 'last_name', 'role']
     if not all(field in data for field in required_fields):
@@ -78,7 +68,7 @@ def create_worker(current_worker):
         role=data['role']
     )
     db.session.add(new_worker)
-    db.session.commit() # end point user can change the password
+    db.session.commit()
 
     return jsonify({"message": "Worker created successfully!"}), 201
 
@@ -88,11 +78,6 @@ def create_worker(current_worker):
 @role_required('admin')
 def get_workers(current_worker):
     """Retrieve all workers. Accessible only to admins."""
-
-
-    print(
-        f"{current_worker.username} (ID: {current_worker.worker_id}) is retrieving the list of workers.")
-
     workers = Worker.query.all()
     return jsonify([{
         'worker_id': w.worker_id,
@@ -112,33 +97,30 @@ def login_worker():
         return jsonify({"message": "Missing username or password!"}), 400
 
     worker = Worker.query.filter_by(username=data['username']).first()
-    if not worker or not check_password_hash(worker.password_hash,
-                                             data['password']):
+    if not worker or not check_password_hash(worker.password_hash, data['password']):
         return jsonify({"message": "Invalid credentials!"}), 401
 
     token = jwt.encode({
         'worker_id': worker.worker_id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        'is_admin': worker.role == 'admin'
     }, SECRET_KEY, algorithm="HS256")
 
-    return jsonify({"token": token}) # admin login is needed add a conditon so that admin can access everything
+    return jsonify({"token": token, "message": "Worker logged in successfully!"})
 
 
 @bp.route('/workers/<int:id>', methods=['PUT'])
 @token_required
 @role_required('admin')
 def update_worker(current_worker, id):
-    """Update an existing worker's information."""
+    """Update an existing worker's information. Admin only."""
     worker = Worker.query.get(id)
     if not worker:
         return jsonify({"message": "Worker not found!"}), 404
 
     data = request.get_json()
 
-
     worker.first_name = data.get('first_name', worker.first_name)
     worker.last_name = data.get('last_name', worker.last_name)
-
 
     if current_worker.role == 'admin':
         worker.role = data.get('role', worker.role)
@@ -146,6 +128,28 @@ def update_worker(current_worker, id):
     db.session.commit()
 
     return jsonify({"message": "Worker updated successfully!"}), 201
+
+
+@bp.route('/workers/<int:id>/password', methods=['PUT'])
+@token_required
+def update_worker_password(current_worker, id):
+    """Update only the password for the worker."""
+    if current_worker.worker_id != id and current_worker.role != 'admin':
+        return jsonify({"message": "You can only update your own password!"}), 403
+
+    worker = Worker.query.get(id)
+    if not worker:
+        return jsonify({"message": "Worker not found!"}), 404
+
+    data = request.get_json()
+    if 'password' not in data:
+        return jsonify({"message": "Password is required!"}), 400
+
+    hashed_password = generate_password_hash(data['password'], method='sha256')
+    worker.password_hash = hashed_password
+    db.session.commit()
+
+    return jsonify({"message": "Password updated successfully!"}), 201
 
 
 @bp.route('/workers/<int:id>', methods=['DELETE'])
@@ -156,10 +160,6 @@ def delete_worker(current_worker, id):
     worker = Worker.query.get(id)
     if not worker:
         return jsonify({"message": "Worker not found!"}), 404
-
-
-    print(f"{current_worker.username} (ID: {current_worker.worker_id}) is attempting to delete worker ID {id}.")
-
 
     if current_worker.worker_id == worker.worker_id:
         return jsonify({"message": "You cannot delete your own account!"}), 403
