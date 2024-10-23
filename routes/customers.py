@@ -33,7 +33,7 @@ def create_customer():
 @bp.route('/customers', methods=['GET'])
 @jwt_required()
 def get_customers():
-    # Pagination and filtering
+
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
     name_query = request.args.get('name')
@@ -71,7 +71,7 @@ def update_customer(id):
 
     data = request.get_json()
 
-    # Update customer data
+
     customer.first_name = data.get('first_name', customer.first_name)
     customer.last_name = data.get('last_name', customer.last_name)
     customer.email = data.get('email', customer.email)

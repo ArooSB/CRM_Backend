@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 
 bp = Blueprint('interactions', __name__)
 
-# Create a new interaction
+
 @bp.route('/interactions', methods=['POST'])
 @jwt_required()
 def create_interaction():
