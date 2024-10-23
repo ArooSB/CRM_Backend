@@ -24,7 +24,7 @@ def create_app():
 
     register_blueprints(app)
     register_error_handlers(app)
-    setup_logging(app)  # Set up logging
+    setup_logging(app)
     return app
 
 def register_blueprints(app):
