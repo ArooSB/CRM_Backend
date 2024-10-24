@@ -167,7 +167,7 @@ def delete_worker(current_worker, id):
     db.session.delete(worker)
     db.session.commit()
 
-    return jsonify({"message": "Worker deleted successfully!"})
+    return jsonify({"message": "Worker deleted successfully!"}), 201
 
 
 @bp.route('/workers/me', methods=['GET'])
