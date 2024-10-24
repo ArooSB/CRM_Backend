@@ -49,7 +49,7 @@ def get_monthly_report():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    # Building SQL query for analytic report
+
     query = """
         SELECT customer_id, worker_id, metric_value, COUNT(*) as count
         FROM analytics
@@ -71,7 +71,7 @@ def get_monthly_report():
 
     query += " GROUP BY customer_id, worker_id, metric_value"
 
-    # Execute query and format results
+
     result = db.session.execute(query)
     report_data = [
         {
