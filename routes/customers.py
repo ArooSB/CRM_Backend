@@ -81,7 +81,7 @@ def update_customer(id):
     customer = Customer.query.get_or_404(id, description="Customer not found.")
     data = request.get_json()
 
-    # Validate if required
+
     if 'email' in data and not isinstance(data.get('email'), str):
         abort(400, description="Invalid email format.")
 
