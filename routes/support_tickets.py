@@ -1,10 +1,16 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, abort
 from backend import db
 from backend.models import SupportTicket
 from services.auto_assignment import auto_assign_ticket
 from flask_jwt_extended import jwt_required
+from sqlalchemy.exc import IntegrityError
 
 bp = Blueprint('support_tickets', __name__)
+
+# Utility function to validate required fields
+def validate_ticket_data(data, required_fields):
+    if not all(field in data for field in required_fields):
+        abort(400, description=f"Missing required fields: {', '.join(required_fields)}.")
 
 
 @bp.route('/support_tickets', methods=['POST'])
@@ -12,27 +18,30 @@ bp = Blueprint('support_tickets', __name__)
 def create_support_ticket():
     """Create a new support ticket and auto-assign it."""
     data = request.get_json()
+    required_fields = ['customer_id', 'created_by', 'ticket_subject', 'ticket_status']
+    validate_ticket_data(data, required_fields)
 
-    # Validate required fields
-    if not all(key in data for key in ['customer_id', 'created_by', 'ticket_subject', 'ticket_status']):
-        return jsonify({"message": "Missing required fields!"}), 400
+    try:
+        new_ticket = SupportTicket(
+            customer_id=data['customer_id'],
+            created_by=data['created_by'],
+            ticket_subject=data['ticket_subject'],
+            ticket_description=data.get('ticket_description', ''),
+            ticket_status=data['ticket_status']
+        )
 
-    new_ticket = SupportTicket(
-        customer_id=data['customer_id'],
-        created_by=data['created_by'],
-        ticket_subject=data['ticket_subject'],
-        ticket_description=data.get('ticket_description', ''),
-        ticket_status=data['ticket_status']
-    )
-
-    db.session.add(new_ticket)
-    db.session.commit()
+        db.session.add(new_ticket)
+        db.session.commit()
 
 
-    auto_assign_ticket(new_ticket)
+        auto_assign_ticket(new_ticket)
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"message": "Failed to create support ticket due to a database error."}), 500
 
     return jsonify({
-        "message": "Support ticket created successfully and assigned!"
+        "message": "Support ticket created successfully and assigned!",
+        "ticket_id": new_ticket.ticket_id
     }), 201
 
 
@@ -41,9 +50,11 @@ def create_support_ticket():
 def get_support_tickets():
     """Retrieve all support tickets or filter by specific fields."""
     query = request.args
+
+    # Initialize query
     tickets = SupportTicket.query
 
-
+    # Apply filters based on query parameters
     if 'ticket_status' in query:
         tickets = tickets.filter(SupportTicket.ticket_status == query.get('ticket_status'))
     if 'customer_id' in query:
@@ -53,6 +64,7 @@ def get_support_tickets():
     page = query.get('page', 1, type=int)
     per_page = query.get('per_page', 10, type=int)
     tickets = tickets.paginate(page=page, per_page=per_page, error_out=False)
+
 
     return jsonify({
         'total_tickets': tickets.total,
@@ -75,10 +87,7 @@ def get_support_tickets():
 @jwt_required()
 def update_support_ticket(id):
     """Update an existing support ticket."""
-    ticket = SupportTicket.query.get(id)
-    if not ticket:
-        return jsonify({"message": "Support ticket not found!"}), 404
-
+    ticket = SupportTicket.query.get_or_404(id, description="Support ticket not found.")
     data = request.get_json()
 
 
@@ -89,6 +98,7 @@ def update_support_ticket(id):
     ticket.ticket_status = data.get('ticket_status', ticket.ticket_status)
 
     db.session.commit()
+
     return jsonify({"message": "Support ticket updated successfully!"})
 
 
@@ -96,10 +106,9 @@ def update_support_ticket(id):
 @jwt_required()
 def delete_support_ticket(id):
     """Delete an existing support ticket."""
-    ticket = SupportTicket.query.get(id)
-    if not ticket:
-        return jsonify({"message": "Support ticket not found!"}), 404
+    ticket = SupportTicket.query.get_or_404(id, description="Support ticket not found.")
 
     db.session.delete(ticket)
     db.session.commit()
+
     return jsonify({"message": "Support ticket deleted successfully!"})
