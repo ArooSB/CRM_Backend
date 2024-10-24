@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 
 bp = Blueprint('support_tickets', __name__)
 
-# Utility function to validate required fields
 def validate_ticket_data(data, required_fields):
     if not all(field in data for field in required_fields):
         abort(400, description=f"Missing required fields: {', '.join(required_fields)}.")
@@ -51,10 +50,10 @@ def get_support_tickets():
     """Retrieve all support tickets or filter by specific fields."""
     query = request.args
 
-    # Initialize query
+
     tickets = SupportTicket.query
 
-    # Apply filters based on query parameters
+
     if 'ticket_status' in query:
         tickets = tickets.filter(SupportTicket.ticket_status == query.get('ticket_status'))
     if 'customer_id' in query:
