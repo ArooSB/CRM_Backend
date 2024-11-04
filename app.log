@@ -18,3 +18,5 @@ Application startup
 Application startup
 Application startup
 Application startup
+2024-11-05 00:19:19,155 - INFO - ✅ Logging configured successfully. [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:89]
+2024-11-05 00:19:19,155 - INFO - 🚀 Application started successfully. [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:33]
