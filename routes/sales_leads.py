@@ -29,29 +29,34 @@ def create_sales_lead():
         )
         db.session.add(new_lead)
         db.session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         db.session.rollback()
-        return jsonify({"message": "Failed to create sales lead due to a database error."}), 500
+        error_message = str(e.orig) if e.orig else "Database integrity error."
+        return jsonify({"message": "Failed to create sales lead.", "error": error_message}), 500
 
     return jsonify({
         "message": "Sales lead created successfully!",
-        "lead_id": new_lead.id
+        "lead": {
+            "lead_id": new_lead.id,
+            "customer_id": new_lead.customer_id,
+            "worker_id": new_lead.worker_id,
+            "lead_status": new_lead.lead_status,
+            "lead_source": new_lead.lead_source,
+            "potential_value": str(new_lead.potential_value),
+            "created_at": new_lead.created_at
+        }
     }), 201
 
 
 @bp.route('/sales_leads', methods=['GET'])
 @jwt_required()
 def get_sales_leads():
-
     lead_status = request.args.get('lead_status')
     lead_source = request.args.get('lead_source')
     min_value = request.args.get('min_potential_value', type=float)
     max_value = request.args.get('max_potential_value', type=float)
-
-
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
-
 
     query = SalesLead.query
 
