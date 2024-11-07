@@ -193,4 +193,4 @@ def delete_analytics_entry(id):
     db.session.delete(analytics)
     db.session.commit()
 
-    return jsonify({"message": "Analytics entry deleted successfully!"})
+    return jsonify({"message": "Analytics entry deleted successfully !"})
