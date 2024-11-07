@@ -6,49 +6,41 @@ from datetime import datetime
 
 bp = Blueprint('analytics', __name__)
 
-
 def validate_date(date_str):
     """
-    Validates the date string and returns a datetime object.
-    Raises a 400 error if the date format is invalid.
+    Validates the date string format and returns a datetime object.
+    Raises a 400 error if the format is incorrect.
     """
     try:
         return datetime.strptime(date_str, '%Y-%m-%d')
     except ValueError:
         abort(400, description="Invalid date format. Use 'YYYY-MM-DD'.")
 
-
 def validate_metric_value(value):
     """
-    Validates if the provided metric value is valid.
-    Acceptable values: 'active', 'deactivated', 'in-process'.
+    Checks if the metric value is valid.
+    Valid values: 'active', 'deactivated', 'in-process'.
     """
     allowed_values = ['active', 'deactivated', 'in-process']
     if value.lower() not in allowed_values:
-        abort(400,
-              description=f"Invalid metric value. Must be one of {allowed_values}.")
-
+        abort(400, description=f"Invalid metric value. Must be one of {allowed_values}.")
 
 def validate_required_fields(data, required_fields):
     """
-    Ensures that the required fields are present in the provided data.
+    Checks for required fields in the data dictionary.
     """
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
-        abort(400,
-              description=f"Missing required fields: {', '.join(missing_fields)}")
-
+        abort(400, description=f"Missing required fields: {', '.join(missing_fields)}")
 
 @bp.route('/analytics/reports', methods=['GET'])
 @jwt_required()
 def get_monthly_report():
     """
-    Generates a monthly report of analytics based on the provided date range.
-    The report is grouped by customer_id, worker_id, and metric_value.
+    Generates a monthly analytics report based on optional date range.
     """
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-
 
     query = """
         SELECT customer_id, worker_id, metric_value, COUNT(*) as count
@@ -58,19 +50,16 @@ def get_monthly_report():
 
     if start_date:
         start_date = validate_date(start_date)
-        conditions.append(
-            f"period_start_date >= '{start_date.strftime('%Y-%m-%d')}'")
+        conditions.append(f"period_start_date >= '{start_date.strftime('%Y-%m-%d')}'")
 
     if end_date:
         end_date = validate_date(end_date)
-        conditions.append(
-            f"period_end_date <= '{end_date.strftime('%Y-%m-%d')}'")
+        conditions.append(f"period_end_date <= '{end_date.strftime('%Y-%m-%d')}'")
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
     query += " GROUP BY customer_id, worker_id, metric_value"
-
 
     result = db.session.execute(query)
     report_data = [
@@ -84,7 +73,6 @@ def get_monthly_report():
 
     return jsonify(report_data)
 
-
 @bp.route('/analytics', methods=['POST'])
 @jwt_required()
 def create_analytics_entry():
@@ -94,8 +82,7 @@ def create_analytics_entry():
     """
     data = request.get_json()
 
-    validate_required_fields(data, ['customer_id', 'worker_id', 'metric_value',
-                                    'period_start_date', 'period_end_date'])
+    validate_required_fields(data, ['customer_id', 'worker_id', 'metric_value', 'period_start_date', 'period_end_date'])
     validate_metric_value(data['metric_value'])
 
     period_start_date = validate_date(data['period_start_date'])
@@ -112,9 +99,10 @@ def create_analytics_entry():
     db.session.add(new_analytics)
     db.session.commit()
 
-    return jsonify({"message": "Analytics entry created successfully!",
-                    "analytics_id": new_analytics.analytics_id}), 201
-
+    return jsonify({
+        "message": "Analytics entry created successfully!",
+        "analytics_id": new_analytics.analytics_id
+    }), 201
 
 @bp.route('/analytics', methods=['GET'])
 @jwt_required()
@@ -173,7 +161,6 @@ def get_analytics():
 
     return jsonify(response)
 
-
 @bp.route('/analytics/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_analytics_entry(id):
@@ -181,8 +168,7 @@ def update_analytics_entry(id):
     Updates an existing analytics entry by its ID.
     Expects JSON data with fields like 'metric_value', 'period_start_date', and 'period_end_date'.
     """
-    analytics = Analytics.query.get_or_404(id,
-                                           description="Analytics entry not found!")
+    analytics = Analytics.query.get_or_404(id, description="Analytics entry not found!")
 
     data = request.get_json()
     validate_metric_value(data.get('metric_value', '').lower())
@@ -196,15 +182,13 @@ def update_analytics_entry(id):
 
     return jsonify({"message": "Analytics entry updated successfully!"})
 
-
 @bp.route('/analytics/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_analytics_entry(id):
     """
     Deletes an analytics entry by its ID.
     """
-    analytics = Analytics.query.get_or_404(id,
-                                           description="Analytics entry not found!")
+    analytics = Analytics.query.get_or_404(id, description="Analytics entry not found!")
 
     db.session.delete(analytics)
     db.session.commit()
