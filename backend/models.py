@@ -71,6 +71,9 @@ class SalesLead(db.Model):
     potential_value = db.Column(db.Float, nullable=True)  # Estimated monetary value of the lead
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Automatically set timestamp
 
+    # Relationship to Worker
+    worker = db.relationship('Worker', backref=db.backref('sales_leads', lazy=True), lazy=True)
+
     def __repr__(self):
         """Return a string representation of the sales lead."""
         return f"<SalesLead ID: {self.id}, Status: {self.lead_status}, Customer ID: {self.customer_id}>"
@@ -83,15 +86,16 @@ class Interaction(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'),
-                            nullable=False)
-    worker_id = db.Column(db.Integer, db.ForeignKey('workers.id'),
-                          nullable=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    worker_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=True)
     interaction_type = db.Column(db.String(50), nullable=False)
     interaction_date = db.Column(db.Date, nullable=False)
     interaction_notes = db.Column(db.Text, default="")
     communication_summary = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship to Worker
+    worker = db.relationship('Worker', backref=db.backref('interactions', lazy=True), lazy=True)
 
     def __repr__(self):
         """Return a string representation of the interaction."""
@@ -105,11 +109,9 @@ class SupportTicket(db.Model):
     __table_args__ = {'extend_existing': True}
 
     id = db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'),
-                            nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     created_by = db.Column(db.String(100), nullable=False)
-    assigned_to = db.Column(db.Integer, db.ForeignKey('workers.id'),
-                            nullable=True)  # Changed to Integer
+    assigned_to = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=True)  # Changed to Integer
     ticket_subject = db.Column(db.String(200), nullable=False)
     ticket_description = db.Column(db.Text, nullable=True)
     ticket_status = db.Column(
@@ -127,6 +129,9 @@ class SupportTicket(db.Model):
         ),
     )
 
+    # Relationship to Worker
+    assigned_worker = db.relationship('Worker', backref=db.backref('assigned_tickets', lazy=True), lazy=True)
+
     def __repr__(self):
         """Return a string representation of the support ticket."""
         return (f"<SupportTicket ID: {self.id}, Status: {self.ticket_status}, "
@@ -140,15 +145,13 @@ class Analytics(db.Model):
     __table_args__ = {'extend_existing': True}
 
     analytics_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    customer_id = db.Column(db.Integer, nullable=False)
-    worker_id = db.Column(db.Integer, nullable=False)
-    period_start_date = db.Column(db.Date, nullable=False)
-    period_end_date = db.Column(db.Date, nullable=False)
-    metric_value = db.Column(db.String(50), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow,
-                           nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
-                           onupdate=datetime.utcnow, nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'))  # Fix here
+    worker_id = db.Column(db.Integer, db.ForeignKey('workers.id'))
+    period_start_date = db.Column(db.Date)
+    period_end_date = db.Column(db.Date)
+    metric_value = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         """Return a string representation of the analytics data."""
