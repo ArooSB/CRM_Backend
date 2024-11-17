@@ -17,7 +17,7 @@ def validate_customer_data(data, check_email=True):
         if not isinstance(data.get('email'), str) or '@' not in data.get('email'):
             abort(400, description="Invalid email format.")
 
-# Route to create a new customer
+
 @bp.route('/customers', methods=['POST'])
 @jwt_required()
 def create_customer():

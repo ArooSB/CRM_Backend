@@ -8,10 +8,10 @@ from logging import FileHandler, Formatter
 
 from backend.config import Config
 
+# Initialize the Flask extensions
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
-
 
 def create_app():
     """Create and configure the Flask application."""
@@ -24,14 +24,16 @@ def create_app():
     jwt.init_app(app)
     CORS(app)
 
-
+    # Register blueprints
     register_blueprints(app)
+
+    # Register custom error handlers
     register_error_handlers(app)
+
+    # Set up logging
     setup_logging(app)
 
-
     app.logger.info("🚀 Application started successfully.")
-
 
     @app.route('/')
     def index():
@@ -40,12 +42,10 @@ def create_app():
 
     return app
 
-
 def register_blueprints(app):
     """Register application blueprints."""
     try:
-        from routes import customers, workers, sales_leads, interactions, \
-            support_tickets, analytics
+        from routes import customers, workers, sales_leads, interactions, support_tickets, analytics
         app.register_blueprint(customers.bp)
         app.register_blueprint(workers.bp)
         app.register_blueprint(sales_leads.bp)
@@ -57,10 +57,8 @@ def register_blueprints(app):
         app.logger.error(f"❌ Error registering blueprints: {e}")
         raise
 
-
 def register_error_handlers(app):
     """Register custom error handlers."""
-
     @app.errorhandler(404)
     def not_found_error(error):
         app.logger.warning(f"⚠️ 404 Not Found: {error}")
@@ -73,7 +71,6 @@ def register_error_handlers(app):
         return jsonify({"message": "Internal server error!"}), 500
 
     app.logger.info("✅ Custom error handlers registered.")
-
 
 def setup_logging(app):
     """Configure application logging."""

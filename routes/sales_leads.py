@@ -1,38 +1,55 @@
 from flask import Blueprint, request, jsonify, abort
 from backend import db
-from backend.models import SalesLead
+from backend.models import SalesLead, Customer, Worker  # Make sure to import Customer and Worker
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
 bp = Blueprint('sales_leads', __name__)
 
-
 def validate_sales_lead_data(data):
+    """Validate incoming sales lead data."""
     required_fields = ['customer_id', 'lead_status']
     if not all(field in data for field in required_fields):
         abort(400, description="Missing required fields: 'customer_id' and 'lead_status'.")
 
-
 @bp.route('/sales_leads', methods=['POST'])
 @jwt_required()
 def create_sales_lead():
+    """Create a new sales lead."""
     data = request.get_json()
+    print("Received data:", data)  # Log the data for debugging
     validate_sales_lead_data(data)
 
+    # Check if the customer exists
+    customer = db.session.query(Customer).filter_by(id=data['customer_id']).first()
+    if not customer:
+        return jsonify({"message": "Customer not found."}), 400
+
+    # Check if the worker exists (if provided)
+    worker_id = data.get('worker_id')
+    if worker_id and not db.session.query(Worker).filter_by(id=worker_id).first():
+        return jsonify({"message": "Worker not found."}), 400
+
+    # Check if the potential_value is valid (if provided)
+    potential_value = data.get('potential_value')
+    if potential_value and not isinstance(potential_value, (int, float)):
+        return jsonify({"message": "Invalid value for potential_value."}), 400
+
     try:
+        # Create and add the new sales lead
         new_lead = SalesLead(
             customer_id=data['customer_id'],
-            worker_id=data.get('worker_id'),
+            worker_id=worker_id,
             lead_status=data['lead_status'],
             lead_source=data.get('lead_source'),
-            potential_value=data.get('potential_value')
+            potential_value=potential_value
         )
         db.session.add(new_lead)
         db.session.commit()
     except IntegrityError as e:
         db.session.rollback()
-        error_message = str(e.orig) if e.orig else "Database integrity error."
-        return jsonify({"message": "Failed to create sales lead.", "error": error_message}), 500
+        print(f"IntegrityError: {e.orig}")  # Detailed error message
+        return jsonify({"message": "Failed to create sales lead.", "error": str(e.orig)}), 500
 
     return jsonify({
         "message": "Sales lead created successfully!",
@@ -51,6 +68,7 @@ def create_sales_lead():
 @bp.route('/sales_leads', methods=['GET'])
 @jwt_required()
 def get_sales_leads():
+    """Retrieve a list of sales leads with optional filters."""
     lead_status = request.args.get('lead_status')
     lead_source = request.args.get('lead_source')
     min_value = request.args.get('min_potential_value', type=float)
@@ -88,6 +106,7 @@ def get_sales_leads():
 @bp.route('/sales_leads/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_sales_lead(id):
+    """Update an existing sales lead."""
     lead = SalesLead.query.get_or_404(id, description="Sales lead not found.")
     data = request.get_json()
 
@@ -105,6 +124,7 @@ def update_sales_lead(id):
 @bp.route('/sales_leads/<int:id>', methods=['DELETE'])
 @jwt_required()
 def delete_sales_lead(id):
+    """Delete an existing sales lead."""
     lead = SalesLead.query.get_or_404(id, description="Sales lead not found.")
 
     db.session.delete(lead)

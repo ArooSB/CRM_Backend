@@ -3,6 +3,7 @@ from backend import db
 from backend.models import Analytics
 from flask_jwt_extended import jwt_required
 from datetime import datetime
+from sqlalchemy.sql import text
 
 bp = Blueprint('analytics', __name__)
 
@@ -29,7 +30,7 @@ def validate_required_fields(data, required_fields):
     """
     Checks for required fields in the data dictionary.
     """
-    missing_fields = [field for field in required_fields if field not in data]
+    missing_fields = [field for field in required_fields if field not in data or data[field] in (None, "")]
     if missing_fields:
         abort(400, description=f"Missing required fields: {', '.join(missing_fields)}")
 
@@ -50,18 +51,25 @@ def get_monthly_report():
 
     if start_date:
         start_date = validate_date(start_date)
-        conditions.append(f"period_start_date >= '{start_date.strftime('%Y-%m-%d')}'")
+        conditions.append(f"period_start_date >= :start_date")
 
     if end_date:
         end_date = validate_date(end_date)
-        conditions.append(f"period_end_date <= '{end_date.strftime('%Y-%m-%d')}'")
+        conditions.append(f"period_end_date <= :end_date")
 
     if conditions:
         query += " WHERE " + " AND ".join(conditions)
 
     query += " GROUP BY customer_id, worker_id, metric_value"
 
-    result = db.session.execute(query)
+    result = db.session.execute(
+        text(query),
+        {
+            'start_date': start_date.strftime('%Y-%m-%d') if start_date else None,
+            'end_date': end_date.strftime('%Y-%m-%d') if end_date else None
+        }
+    )
+
     report_data = [
         {
             'customer_id': row['customer_id'],
@@ -87,6 +95,9 @@ def create_analytics_entry():
 
     period_start_date = validate_date(data['period_start_date'])
     period_end_date = validate_date(data['period_end_date'])
+
+    if period_start_date > period_end_date:
+        abort(400, description="Period start date cannot be after the end date.")
 
     new_analytics = Analytics(
         customer_id=data['customer_id'],
@@ -126,9 +137,13 @@ def get_analytics():
         query = query.filter_by(metric_value=metric_value.lower())
 
     if customer_id:
+        if not customer_id.isdigit():
+            abort(400, description="Invalid customer ID format.")
         query = query.filter_by(customer_id=customer_id)
 
     if worker_id:
+        if not worker_id.isdigit():
+            abort(400, description="Invalid worker ID format.")
         query = query.filter_by(worker_id=worker_id)
 
     if start_date:
@@ -139,6 +154,7 @@ def get_analytics():
         end_date = validate_date(end_date)
         query = query.filter(Analytics.period_end_date <= end_date)
 
+    query = query.order_by(Analytics.created_at.desc())
     analytics = query.paginate(page=page, per_page=per_page, error_out=False)
 
     response = {
@@ -153,8 +169,8 @@ def get_analytics():
                 'metric_value': a.metric_value,
                 'period_start': a.period_start_date.strftime('%Y-%m-%d'),
                 'period_end': a.period_end_date.strftime('%Y-%m-%d'),
-                'created_at': a.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': a.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                'created_at': a.created_at.strftime('%Y-%m-%d %H:%M'),
+                'updated_at': a.updated_at.strftime('%Y-%m-%d %H:%M')
             } for a in analytics.items
         ]
     }
@@ -165,19 +181,23 @@ def get_analytics():
 @jwt_required()
 def update_analytics_entry(id):
     """
-    Updates an existing analytics entry by its ID.
-    Expects JSON data with fields like 'metric_value', 'period_start_date', and 'period_end_date'.
+    Updates an existing analytics entry by its ID. Supports partial updates.
     """
     analytics = Analytics.query.get_or_404(id, description="Analytics entry not found!")
 
     data = request.get_json()
-    validate_metric_value(data.get('metric_value', '').lower())
 
-    analytics.period_start_date = validate_date(data['period_start_date'])
-    analytics.period_end_date = validate_date(data['period_end_date'])
-    analytics.metric_value = data['metric_value'].lower()
+    if 'metric_value' in data:
+        validate_metric_value(data['metric_value'])
+        analytics.metric_value = data['metric_value'].lower()
+
+    if 'period_start_date' in data:
+        analytics.period_start_date = validate_date(data['period_start_date'])
+
+    if 'period_end_date' in data:
+        analytics.period_end_date = validate_date(data['period_end_date'])
+
     analytics.updated_at = datetime.utcnow()
-
     db.session.commit()
 
     return jsonify({"message": "Analytics entry updated successfully!"})
@@ -193,4 +213,4 @@ def delete_analytics_entry(id):
     db.session.delete(analytics)
     db.session.commit()
 
-    return jsonify({"message": "Analytics entry deleted successfully !"})
+    return jsonify({"message": "Analytics entry deleted successfully!"})
