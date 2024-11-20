@@ -100,4 +100,4 @@ def upgrade_db():
 
 if __name__ == "__main__":
     app.run()
-    #app.run(debug=True, port=5003)
+    #app.run(debug=True, port=5003) for local
