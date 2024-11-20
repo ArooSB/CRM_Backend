@@ -99,4 +99,4 @@ def upgrade_db():
         print(f"❌ Error upgrading database: {e}")
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5003)
+    app.run()
