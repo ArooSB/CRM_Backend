@@ -5,13 +5,18 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import logging
 from logging import FileHandler, Formatter
-
 from backend.config import Config
+from flask_swagger_ui import get_swaggerui_blueprint
 
 # Initialize the Flask extensions
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
+
+SWAGGER_URL = "/api/docs"
+API_URL = "/static/users.json"
+
+
 
 def create_app():
     """Create and configure the Flask application."""
@@ -23,6 +28,15 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
     CORS(app)
+
+    swagger_ui_blueprint = get_swaggerui_blueprint(
+        SWAGGER_URL,
+        API_URL,
+        config={
+            'app_name': 'Users API'
+        }
+    )
+    app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
     # Register blueprints
     register_blueprints(app)
