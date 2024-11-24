@@ -436,3 +436,5 @@ Application startup
 2024-11-24 16:08:04,547 - INFO - ✅ Logging configured successfully. [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:100]
 2024-11-24 16:08:04,547 - INFO - 🚀 Application started successfully. [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:50]
 2024-11-24 16:08:12,735 - INFO - 📥 Accessed index route [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:54]
+2024-11-24 17:16:24,938 - INFO - ✅ Logging configured successfully. [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:100]
+2024-11-24 17:16:24,938 - INFO - 🚀 Application started successfully. [in /Users/arooshabasharat/PycharmProjects/crm_backend/backend/__init__.py:50]
