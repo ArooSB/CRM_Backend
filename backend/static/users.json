@@ -1,76 +1,207 @@
 {
-	"swagger": "2.0",
-    "info": {
-    "title": "Poetica Vena API",
+  "swagger": "2.0",
+  "info": {
+    "title": "CRM Worker Management API",
+    "description": "Endpoints for managing workers in the CRM app.",
     "version": "1.0.0"
-    },
-    "servers": [{ "url": "http://localhost:5000" }],
-    "schemes": ["http"],
-    "securityDefinitions": {
-        "BearerAuth": {
-        "type": "apiKey",
-        "name": "Authorization",
-        "in": "header",
-        "description": "Enter your bearer token in the format **Bearer <token>**"
+  },
+  "host": "crm-backend-waks.onrender.com/api/docs",
+  "schemes": ["http"],
+  "securityDefinitions": {
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter your bearer token in the format **Bearer <token>**"
+    }
+  },
+  "paths": {
+    "/workers": {
+      "post": {
+        "summary": "Create a new worker",
+        "description": "Accessible only by admin users.",
+        "security": [
+          { "BearerAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/CreateWorker" }
+          }
+        ],
+        "responses": {
+          "201": { "description": "Worker created successfully." },
+          "400": { "description": "Missing required fields or user already exists." },
+          "403": { "description": "Forbidden for non-admin users." }
         }
-    },
-    "paths": {
-		"/poets": {
-            "get": {
-                "summary": "Returns all poets",
-                "produces": [
-                    "application/json"
-                ],
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation"
-                    }
-                }
-            }
-        },
-        "/auth/login": {
-            "post": {
-                "summary": "Logs in the poet(esse)",
-                "consumes": ["application/json"],
-                "produces": [
-                    "application/json"
-                ],
-                "parameters": [
-                    {
-                        "name": "poet data",
-                        "in": "body",
-                        "description": "JSON poet data for the api",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/PoetLogIn"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation"
-                    }
-                }
-            }
+      },
+      "get": {
+        "summary": "Get all workers",
+        "description": "Retrieve a list of all workers. Accessible only by admin users.",
+        "security": [
+          { "BearerAuth": [] }
+        ],
+        "responses": {
+          "200": { "description": "List of workers.", "schema": { "type": "array", "items": { "$ref": "#/definitions/Worker" } } },
+          "403": { "description": "Forbidden for non-admin users." }
         }
+      }
     },
-    "definitions": {
-    "PoetLogIn": {
+    "/workers/{id}": {
+      "put": {
+        "summary": "Update a worker",
+        "description": "Update a worker's information. Accessible only by admin users.",
+        "security": [
+          { "BearerAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/UpdateWorker" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Worker updated successfully." },
+          "404": { "description": "Worker not found." }
+        }
+      },
+      "delete": {
+        "summary": "Delete a worker",
+        "description": "Delete a worker's account. Admin cannot delete their own account.",
+        "security": [
+          { "BearerAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Worker deleted successfully." },
+          "403": { "description": "Cannot delete your own account." },
+          "404": { "description": "Worker not found." }
+        }
+      }
+    },
+    "/workers/password/{id}": {
+      "put": {
+        "summary": "Update worker's password",
+        "description": "Update a worker's password. A worker can update their own password or admin can update any worker's password.",
+        "security": [
+          { "BearerAuth": [] }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/UpdatePassword" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Password updated successfully." },
+          "403": { "description": "Forbidden for unauthorized updates." },
+          "404": { "description": "Worker not found." }
+        }
+      }
+    },
+    "/workers/login": {
+      "post": {
+        "summary": "Log in a worker",
+        "description": "Authenticate a worker and return a JWT.",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/LoginWorker" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Login successful. JWT returned." },
+          "401": { "description": "Invalid credentials." }
+        }
+      }
+    },
+    "/workers/me": {
+      "get": {
+        "summary": "Get current worker's profile",
+        "description": "Retrieve the profile of the currently authenticated worker.",
+        "security": [
+          { "BearerAuth": [] }
+        ],
+        "responses": {
+          "200": { "description": "Worker profile retrieved.", "schema": { "$ref": "#/definitions/Worker" } }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "CreateWorker": {
+      "type": "object",
+      "required": ["username", "password", "first_name", "last_name", "position", "email"],
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "first_name": { "type": "string" },
+        "last_name": { "type": "string" },
+        "position": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    },
+    "UpdateWorker": {
       "type": "object",
       "properties": {
-        "email": {
-          "type": "string",
-		  "example": "elis@gmail.com"
-        },
-        "password": {
-          "type": "string",
-				  "example": "1234567890"
-        }
+        "first_name": { "type": "string" },
+        "last_name": { "type": "string" },
+        "position": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    },
+    "UpdatePassword": {
+      "type": "object",
+      "required": ["password"],
+      "properties": {
+        "password": { "type": "string" }
+      }
+    },
+    "LoginWorker": {
+      "type": "object",
+      "required": ["username", "password"],
+      "properties": {
+        "username": { "type": "string" },
+        "password": { "type": "string" }
+      }
+    },
+    "Worker": {
+      "type": "object",
+      "properties": {
+        "worker_id": { "type": "integer" },
+        "username": { "type": "string" },
+        "first_name": { "type": "string" },
+        "last_name": { "type": "string" },
+        "position": { "type": "string" },
+        "email": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
       }
     }
   }
