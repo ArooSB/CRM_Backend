@@ -5,8 +5,8 @@
     "description": "Endpoints for managing workers in the CRM app.",
     "version": "1.0.0"
   },
-  "host": "crm-backend-waks.onrender.com/api/docs",
-  "schemes": ["http"],
+  "host": "crm-backend-waks.onrender.com",
+  "schemes": ["https"],
   "securityDefinitions": {
     "BearerAuth": {
       "type": "apiKey",
