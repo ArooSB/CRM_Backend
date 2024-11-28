@@ -30,6 +30,7 @@ def role_required(role):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             current_worker = kwargs.get('current_worker', None)
+            print(current_worker)
             if not current_worker:
                 return jsonify({"message": "Authorization required!"}), 401
 
