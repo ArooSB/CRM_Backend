@@ -1,18 +1,26 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "CRM Worker Management API",
-    "description": "Endpoints for managing workers, support tickets, and sales leads in the CRM app.",
+    "title": "CRM Management API",
+    "description": "Comprehensive API for managing CRM resources such as customers, workers, support tickets, and sales leads.",
     "version": "1.0.0"
   },
   "host": "crm-backend-waks.onrender.com",
-  "schemes": ["https"],
+  "schemes": [
+    "https"
+  ],
   "securityDefinitions": {
     "BearerAuth": {
       "type": "apiKey",
       "name": "Authorization",
       "in": "header",
       "description": "Enter your bearer token in the format **Bearer <token>**"
+    },
+    "JWT": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter the JWT token in the format **Bearer <token>**"
     }
   },
   "security": [
@@ -21,12 +29,12 @@
     }
   ],
   "paths": {
-    "/workers": {
+    "/customers": {
       "post": {
-        "summary": "Create Worker",
-        "description": "Create a new worker account. Only accessible by admin.",
+        "summary": "Create Customer",
+        "description": "Add a new customer to the CRM.",
+        "tags": ["Customers"],
         "security": [{"BearerAuth": []}],
-        "tags": ["Workers"],
         "parameters": [
           {
             "in": "body",
@@ -35,28 +43,207 @@
             "schema": {
               "type": "object",
               "properties": {
-                "username": {"type": "string"},
-                "password": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "position": {"type": "string"},
-                "email": {"type": "string"}
+                "first_name": { "type": "string" },
+                "last_name": { "type": "string" },
+                "email": { "type": "string" },
+                "phone": { "type": "string" },
+                "company": { "type": "string" },
+                "address": { "type": "string" }
+              },
+              "required": ["first_name", "last_name", "email"]
+            }
+          }
+        ],
+        "responses": {
+          "201": { "description": "Customer created successfully." },
+          "400": { "description": "Invalid input data." },
+          "409": { "description": "Email already exists." },
+          "401": { "description": "Unauthorized access." }
+        }
+      },
+      "get": {
+        "summary": "Get Customers",
+        "description": "Retrieve a list of customers with optional pagination.",
+        "tags": ["Customers"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "type": "integer",
+            "required": false
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "type": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": { "description": "Customer list retrieved successfully." },
+          "401": { "description": "Unauthorized access." }
+        }
+      }
+    },
+    "/customers/{id}": {
+      "get": {
+        "summary": "Get Customer by ID",
+        "description": "Retrieve details of a specific customer.",
+        "tags": ["Customers"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "type": "integer",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": { "description": "Customer retrieved successfully." },
+          "404": { "description": "Customer not found." },
+          "401": { "description": "Unauthorized access." }
+        }
+      },
+      "put": {
+        "summary": "Update Customer",
+        "description": "Update a customer's details.",
+        "tags": ["Customers"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "type": "integer",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "first_name": { "type": "string" },
+                "last_name": { "type": "string" },
+                "email": { "type": "string" },
+                "phone": { "type": "string" },
+                "company": { "type": "string" },
+                "address": { "type": "string" }
+              },
+              "required": ["first_name", "last_name", "email"]
+            }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Customer updated successfully." },
+          "400": { "description": "Invalid input data." },
+          "404": { "description": "Customer not found." },
+          "409": { "description": "Email already exists." },
+          "401": { "description": "Unauthorized access." }
+        }
+      },
+      "delete": {
+        "summary": "Delete Customer",
+        "description": "Remove a customer from the system.",
+        "tags": ["Customers"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "type": "integer",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": { "description": "Customer deleted successfully." },
+          "404": { "description": "Customer not found." },
+          "401": { "description": "Unauthorized access." }
+        }
+      }
+    },
+    "/workers/login": {
+      "post": {
+        "summary": "Authenticate a worker and return a JWT",
+        "description": "Authenticate a worker by validating the username and password, then return a JWT token for further access",
+        "tags": ["Workers"],
+        "parameters": [
+          {
+            "name": "login_data",
+            "in": "body",
+            "description": "Worker login data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": { "type": "string", "description": "The worker's username" },
+                "password": { "type": "string", "description": "The worker's password" }
+              },
+              "required": ["username", "password"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Worker logged in successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "token": { "type": "string", "description": "JWT token for authentication" },
+                "message": { "type": "string", "example": "Worker logged in successfully!" }
+              }
+            }
+          },
+          "400": { "description": "Missing username or password" },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/workers": {
+      "post": {
+        "summary": "Create Worker",
+        "description": "Create a new worker. Accessible only by admin.",
+        "tags": ["Workers"],
+        "security": [{"JWT": []}],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": { "type": "string" },
+                "password": { "type": "string" },
+                "first_name": { "type": "string" },
+                "last_name": { "type": "string" },
+                "position": { "type": "string" },
+                "email": { "type": "string" }
               },
               "required": ["username", "password", "first_name", "last_name", "position", "email"]
             }
           }
         ],
         "responses": {
-          "201": {"description": "Worker created successfully."},
-          "400": {"description": "Missing required fields or duplicate worker data."},
-          "403": {"description": "Permission denied."}
+          "201": { "description": "Worker created successfully." },
+          "400": { "description": "Invalid input or duplicate data." },
+          "403": { "description": "Unauthorized action." },
+          "401": { "description": "Unauthorized access." }
         }
       },
       "get": {
-        "summary": "Retrieve Workers",
-        "description": "Get a list of all workers. Only accessible by admin.",
-        "security": [{"BearerAuth": []}],
+        "summary": "Get Workers",
+        "description": "Retrieve a list of workers. Admin-only access.",
         "tags": ["Workers"],
+        "security": [{"JWT": []}],
         "responses": {
           "200": {
             "description": "List of workers retrieved successfully.",
@@ -65,69 +252,35 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "worker_id": {"type": "integer"},
-                  "username": {"type": "string"},
-                  "first_name": {"type": "string"},
-                  "last_name": {"type": "string"},
-                  "position": {"type": "string"},
-                  "email": {"type": "string"},
-                  "created_at": {"type": "string"}
+                  "worker_id": { "type": "integer" },
+                  "username": { "type": "string" },
+                  "first_name": { "type": "string" },
+                  "last_name": { "type": "string" },
+                  "position": { "type": "string" },
+                  "email": { "type": "string" },
+                  "created_at": { "type": "string" }
                 }
               }
             }
           },
-          "403": {"description": "Permission denied."}
-        }
-      }
-    },
-    "/workers/login": {
-      "post": {
-        "summary": "Login Worker",
-        "description": "Authenticate a worker and return a JWT.",
-        "tags": ["Workers"],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "username": {"type": "string"},
-                "password": {"type": "string"}
-              },
-              "required": ["username", "password"]
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Login successful.",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "token": {"type": "string"},
-                "message": {"type": "string"}
-              }
-            }
-          },
-          "401": {"description": "Invalid credentials."}
+          "403": { "description": "Unauthorized action." },
+          "401": { "description": "Unauthorized access." }
         }
       }
     },
     "/workers/{id}": {
       "put": {
         "summary": "Update Worker",
-        "description": "Update an existing worker's information. Admin only.",
-        "security": [{"BearerAuth": []}],
+        "description": "Update worker details. Accessible only by admin.",
         "tags": ["Workers"],
+        "security": [{"JWT": []}],
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Worker ID",
             "required": true,
-            "type": "integer",
-            "description": "Worker ID to update."
+            "type": "integer"
           },
           {
             "in": "body",
@@ -136,114 +289,564 @@
             "schema": {
               "type": "object",
               "properties": {
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "position": {"type": "string"},
-                "email": {"type": "string"}
+                "first_name": { "type": "string" },
+                "last_name": { "type": "string" },
+                "position": { "type": "string" },
+                "email": { "type": "string" }
               }
             }
           }
         ],
         "responses": {
-          "200": {"description": "Worker updated successfully."},
-          "404": {"description": "Worker not found."},
-          "403": {"description": "Permission denied."}
+          "200": { "description": "Worker updated successfully." },
+          "400": { "description": "Invalid input." },
+          "404": { "description": "Worker not found." },
+          "403": { "description": "Unauthorized action." },
+          "401": { "description": "Unauthorized access." }
         }
       },
       "delete": {
         "summary": "Delete Worker",
-        "description": "Delete a worker's account. Admin only.",
-        "security": [{"BearerAuth": []}],
+        "description": "Delete worker from the system. Admin-only.",
         "tags": ["Workers"],
+        "security": [{"JWT": []}],
         "parameters": [
           {
             "name": "id",
             "in": "path",
+            "description": "Worker ID",
             "required": true,
-            "type": "integer",
-            "description": "Worker ID to delete."
+            "type": "integer"
           }
         ],
         "responses": {
-          "200": {"description": "Worker deleted successfully."},
-          "404": {"description": "Worker not found."},
-          "403": {"description": "Permission denied."}
+          "200": { "description": "Worker deleted successfully." },
+          "404": { "description": "Worker not found." },
+          "403": { "description": "Unauthorized action." },
+          "401": { "description": "Unauthorized access." }
         }
       }
     },
-    "/workers/me": {
-      "get": {
-        "summary": "Get My Profile",
-        "description": "Retrieve the currently logged-in worker's profile.",
-        "security": [{"BearerAuth": []}],
-        "tags": ["Workers"],
-        "responses": {
-          "200": {
-            "description": "Profile retrieved successfully.",
+    "/interactions": {
+      "post": {
+        "summary": "Create a new interaction",
+        "description": "Create a new interaction between a worker and a customer",
+        "tags": ["Interactions"],
+        "security": [{"JWT": []}],
+        "parameters": [
+          {
+            "name": "interaction",
+            "in": "body",
+            "description": "Interaction object to be created",
+            "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "worker_id": {"type": "integer"},
-                "username": {"type": "string"},
-                "first_name": {"type": "string"},
-                "last_name": {"type": "string"},
-                "position": {"type": "string"},
-                "email": {"type": "string"},
-                "created_at": {"type": "string"}
+                "customer_id": {
+                  "type": "integer",
+                  "description": "ID of the customer"
+                },
+                "worker_id": {
+                  "type": "integer",
+                  "description": "ID of the worker (optional)"
+                },
+                "interaction_type": {
+                  "type": "string",
+                  "description": "Type of interaction"
+                },
+                "interaction_date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Date of the interaction"
+                },
+                "interaction_notes": {
+                  "type": "string",
+                  "description": "Notes about the interaction (optional)"
+                },
+                "communication_summary": {
+                  "type": "string",
+                  "description": "Summary of the communication (optional)"
+                }
+              },
+              "required": [
+                "customer_id",
+                "interaction_type",
+                "interaction_date"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Interaction created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Interaction created successfully!"
+                },
+                "interaction_id": {
+                  "type": "integer",
+                  "example": 1
+                }
               }
             }
           },
-          "401": {"description": "Authorization required."}
+          "400": { "description": "Invalid input data" },
+          "409": { "description": "Database integrity error" },
+          "500": { "description": "Database error" }
+        }
+      },
+      "get": {
+        "summary": "Get a list of interactions",
+        "description": "Retrieve a list of interactions with optional filters",
+        "tags": ["Interactions"],
+        "security": [{"JWT": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "type": "integer",
+            "default": 1
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of interactions per page",
+            "required": false,
+            "type": "integer",
+            "default": 10
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter interactions by status",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "description": "Filter interactions by customer ID",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of interactions",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "total_interactions": {
+                  "type": "integer",
+                  "example": 100
+                },
+                "page": {
+                  "type": "integer",
+                  "example": 1
+                },
+                "per_page": {
+                  "type": "integer",
+                  "example": 10
+                },
+                "interactions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "interaction_id": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "customer_id": {
+                        "type": "integer",
+                        "example": 1
+                      },
+                      "worker_id": {
+                        "type": "integer",
+                        "example": 2
+                      },
+                      "interaction_type": {
+                        "type": "string",
+                        "example": "Phone Call"
+                      },
+                      "interaction_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-12-04T14:00:00Z"
+                      },
+                      "interaction_notes": {
+                        "type": "string",
+                        "example": "Discussed project updates"
+                      },
+                      "communication_summary": {
+                        "type": "string",
+                        "example": "Summarized meeting details"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-12-04T14:00:00Z"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid query parameters" },
+          "500": { "description": "Database error" }
         }
       }
     },
-    "/analytics/reports": {
-
-  "get": {
-    "summary": "Get Monthly Analytics Report",
-    "description": "Generates a monthly analytics report based on an optional date range.",
-    "tags": ["analytics"],
-    "parameters": [
-      {
-        "name": "start_date",
-        "in": "query",
-        "description": "Start date for the report (YYYY-MM-DD).",
-        "required": false,
-        "type": "string",
-        "format": "date"
+    "/sales_leads": {
+      "post": {
+        "summary": "Create a new sales lead",
+        "description": "Create a new sales lead and associate it with a customer and an optional worker.",
+        "tags": ["Sales Leads"],
+        "parameters": [
+          {
+            "name": "sales_lead_data",
+            "in": "body",
+            "description": "Sales lead data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customer_id": {
+                  "type": "integer",
+                  "description": "The ID of the customer associated with this sales lead"
+                },
+                "worker_id": {
+                  "type": "integer",
+                  "description": "The ID of the worker associated with this sales lead (optional)"
+                },
+                "lead_status": {
+                  "type": "string",
+                  "description": "The status of the sales lead (e.g., 'New', 'In Progress', etc.)"
+                },
+                "lead_source": {
+                  "type": "string",
+                  "description": "The source from which the sales lead was generated (optional)"
+                },
+                "potential_value": {
+                  "type": "number",
+                  "description": "The potential value of the sales lead (optional)"
+                }
+              },
+              "required": ["customer_id", "lead_status"]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Sales lead created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Sales lead created successfully!"
+                },
+                "lead": {
+                  "type": "object",
+                  "properties": {
+                    "lead_id": {
+                      "type": "integer",
+                      "description": "The unique ID of the sales lead"
+                    },
+                    "customer_id": {
+                      "type": "integer",
+                      "description": "The ID of the associated customer"
+                    },
+                    "worker_id": {
+                      "type": "integer",
+                      "description": "The ID of the worker associated with the lead"
+                    },
+                    "lead_status": {
+                      "type": "string",
+                      "description": "The status of the sales lead"
+                    },
+                    "lead_source": {
+                      "type": "string",
+                      "description": "The source of the sales lead"
+                    },
+                    "potential_value": {
+                      "type": "string",
+                      "description": "The potential value of the sales lead"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "The date and time when the sales lead was created"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request due to missing or invalid data" },
+          "500": { "description": "Internal server error" }
+        }
       },
-      {
-        "name": "end_date",
-        "in": "query",
-        "description": "End date for the report (YYYY-MM-DD).",
-        "required": false,
-        "type": "string",
-        "format": "date"
+      "get": {
+        "summary": "Retrieve sales leads with optional filters",
+        "description": "Get a list of sales leads with optional filtering by lead status, lead source, and potential value range.",
+        "tags": ["Sales Leads"],
+        "parameters": [
+          {
+            "name": "lead_status",
+            "in": "query",
+            "description": "Filter leads by their status (optional)",
+            "type": "string"
+          },
+          {
+            "name": "lead_source",
+            "in": "query",
+            "description": "Filter leads by their source (optional)",
+            "type": "string"
+          },
+          {
+            "name": "min_potential_value",
+            "in": "query",
+            "description": "Filter leads by minimum potential value (optional)",
+            "type": "number",
+            "format": "float"
+          },
+          {
+            "name": "max_potential_value",
+            "in": "query",
+            "description": "Filter leads by maximum potential value (optional)",
+            "type": "number",
+            "format": "float"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "The page number for pagination (optional)",
+            "type": "integer",
+            "default": 1
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "The number of leads per page for pagination (optional)",
+            "type": "integer",
+            "default": 10
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved sales leads",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "total_leads": {
+                  "type": "integer",
+                  "description": "Total number of sales leads matching the filters"
+                },
+                "page": {
+                  "type": "integer",
+                  "description": "The current page of results"
+                },
+                "per_page": {
+                  "type": "integer",
+                  "description": "The number of results per page"
+                },
+                "leads": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "lead_id": {
+                        "type": "integer",
+                        "description": "The unique ID of the sales lead"
+                      },
+                      "customer_id": {
+                        "type": "integer",
+                        "description": "The ID of the associated customer"
+                      },
+                      "worker_id": {
+                        "type": "integer",
+                        "description": "The ID of the worker associated with the lead"
+                      },
+                      "lead_status": {
+                        "type": "string",
+                        "description": "The status of the sales lead"
+                      },
+                      "lead_source": {
+                        "type": "string",
+                        "description": "The source of the sales lead"
+                      },
+                      "potential_value": {
+                        "type": "string",
+                        "description": "The potential value of the sales lead"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The date and time when the sales lead was created"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request due to invalid filter parameters" },
+          "500": { "description": "Internal server error" }
+        }
       }
-    ],
-    "responses": {
-      "200": {
-        "description": "Monthly analytics report generated successfully.",
-        "schema": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "customer_id": { "type": "integer" },
-              "worker_id": { "type": "integer" },
-              "metric_value": { "type": "string" },
-              "count": { "type": "integer" }
+    },
+    "/analytics": {
+      "post": {
+        "tags": ["Analytics"],
+        "summary": "Create a new analytics entry",
+        "description": "Creates a new analytics entry. Expects JSON data with 'customer_id', 'worker_id', 'metric_value', 'period_start_date', and 'period_end_date'.",
+        "security": [{"JWT": []}],
+        "parameters": [
+          {
+            "name": "analytics_data",
+            "in": "body",
+            "description": "Analytics data to be added",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "customer_id": { "type": "integer", "description": "ID of the customer" },
+                "worker_id": { "type": "integer", "description": "ID of the worker" },
+                "metric_value": { "type": "string", "description": "Metric value for the analytics entry" },
+                "period_start_date": { "type": "string", "format": "date", "description": "Start date for the period" },
+                "period_end_date": { "type": "string", "format": "date", "description": "End date for the period" }
+              },
+              "required": ["customer_id", "worker_id", "metric_value", "period_start_date", "period_end_date"]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Analytics entry created successfully",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Analytics entry created successfully!"
+                },
+                "analytics_id": {
+                  "type": "integer",
+                  "description": "The ID of the created analytics entry"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "example": "Period start date cannot be after the end date."
+                }
+              }
             }
           }
         }
       },
-      "400": {
-        "description": "Invalid request parameters."
+      "get": {
+        "tags": ["Analytics"],
+        "summary": "Retrieve analytics entries",
+        "description": "Retrieves analytics entries with optional filters like 'metric_value', 'customer_id', 'worker_id', and date range. Supports pagination.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number for pagination",
+            "required": false,
+            "type": "integer",
+            "default": 1
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Number of results per page",
+            "required": false,
+            "type": "integer",
+            "default": 10
+          },
+          {
+            "name": "metric_value",
+            "in": "query",
+            "description": "Filter by metric value",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "customer_id",
+            "in": "query",
+            "description": "Filter by customer ID",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "worker_id",
+            "in": "query",
+            "description": "Filter by worker ID",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Filter by start date",
+            "required": false,
+            "type": "string",
+            "format": "date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Filter by end date",
+            "required": false,
+            "type": "string",
+            "format": "date"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of analytics entries",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "total_entries": { "type": "integer", "description": "Total number of analytics entries" },
+                "page": { "type": "integer", "description": "Current page number" },
+                "per_page": { "type": "integer", "description": "Number of results per page" },
+                "analytics": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "analytics_id": { "type": "integer", "description": "ID of the analytics entry" },
+                      "customer_id": { "type": "integer", "description": "ID of the customer" },
+                      "worker_id": { "type": "integer", "description": "ID of the worker" },
+                      "metric_value": { "type": "string", "description": "Metric value for the analytics entry" },
+                      "period_start": { "type": "string", "format": "date", "description": "Start date for the period" },
+                      "period_end": { "type": "string", "format": "date", "description": "End date for the period" },
+                      "created_at": { "type": "string", "format": "date-time", "description": "Timestamp when the entry was created" },
+                      "updated_at": { "type": "string", "format": "date-time", "description": "Timestamp when the entry was last updated" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
-    },
-    "security": [{ "BearerAuth": [] }]
-  }
-}
-
+    }
   }
 }
