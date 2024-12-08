@@ -60,7 +60,7 @@ def create_app():
 def register_blueprints(app):
     """Register application blueprints."""
     try:
-        from routes import customers, workers, sales_leads, interactions, support_tickets, analytics, revenue
+        from routes import customers, workers, sales_leads, interactions, support_tickets, analytics, revenue, calendar
         app.register_blueprint(customers.bp)
         app.register_blueprint(workers.bp)
         app.register_blueprint(sales_leads.bp)
