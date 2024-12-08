@@ -156,3 +156,25 @@ class Analytics(db.Model):
     def __repr__(self):
         """Return a string representation of the analytics data."""
         return f"<Analytics analytics_id: {self.analytics_id}, customer_id: {self.customer_id}, worker_id: {self.worker_id}>"
+
+    class Revenue(db.Model):
+        """Model representing revenue data."""
+
+        __tablename__ = 'revenue'
+        __table_args__ = {'extend_existing': True}
+
+        id = db.Column(db.Integer, primary_key=True)
+        total_revenue = db.Column(db.Float,
+                                  nullable=False)  # Total revenue amount
+        start_date = db.Column(db.Date,
+                               nullable=False)  # Revenue calculation start date
+        end_date = db.Column(db.Date,
+                             nullable=False)  # Revenue calculation end date
+        created_at = db.Column(db.DateTime,
+                               default=datetime.utcnow)  # Timestamp of record creation
+
+        def __repr__(self):
+            """Return a string representation of the revenue record."""
+            return (
+                f"<Revenue ID: {self.id}, Total Revenue: {self.total_revenue}, "
+                f"Period: {self.start_date} to {self.end_date}>")

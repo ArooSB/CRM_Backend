@@ -59,13 +59,14 @@ def create_app():
 def register_blueprints(app):
     """Register application blueprints."""
     try:
-        from routes import customers, workers, sales_leads, interactions, support_tickets, analytics
+        from routes import customers, workers, sales_leads, interactions, support_tickets, analytics, revenue
         app.register_blueprint(customers.bp)
         app.register_blueprint(workers.bp)
         app.register_blueprint(sales_leads.bp)
         app.register_blueprint(interactions.bp)
         app.register_blueprint(support_tickets.bp)
         app.register_blueprint(analytics.bp)
+        app.resgister_blueprint(revenue.bp)
         app.logger.info("✅ Blueprints registered successfully.")
     except ImportError as e:
         app.logger.error(f"❌ Error registering blueprints: {e}")
