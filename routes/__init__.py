@@ -6,7 +6,7 @@ from routes.sales_leads import bp as sales_leads_bp
 from routes.support_tickets import bp as support_tickets_bp
 from routes.workers import bp as workers_bp
 from routes.revenue import bp as revenue_bp
-from routes.calendar import bp as calendar_bp  # Corrected import here
+from routes.calendar import bp as calendar_bp
 
 def register_routes(app: Flask):
 

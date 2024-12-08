@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort
 from backend import db
-from backend.models import SupportTicket, Worker, Customer  # Make sure to import the necessary models
+from backend.models import SupportTicket, Worker, Customer
 from services.auto_assignment import auto_assign_ticket
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError

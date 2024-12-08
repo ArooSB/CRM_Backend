@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort
 from backend import db
-from backend.models import SalesLead, Customer, Worker  # Make sure to import Customer and Worker
+from backend.models import SalesLead, Customer, Worker
 from flask_jwt_extended import jwt_required
 from sqlalchemy.exc import IntegrityError
 
