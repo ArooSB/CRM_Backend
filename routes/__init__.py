@@ -9,7 +9,6 @@ from routes.revenue import bp as revenue_bp
 from routes.calendar import bp as calendar_bp
 
 def register_routes(app: Flask):
-
     app.register_blueprint(analytics_bp, url_prefix='/api')
     app.register_blueprint(customers_bp, url_prefix='/api')
     app.register_blueprint(interactions_bp, url_prefix='/api')
