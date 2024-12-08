@@ -1,3 +1,4 @@
+from calendar import calendar
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -67,6 +68,7 @@ def register_blueprints(app):
         app.register_blueprint(support_tickets.bp)
         app.register_blueprint(analytics.bp)
         app.resgister_blueprint(revenue.bp)
+        app.register_blueprint(calendar.bp)
         app.logger.info("✅ Blueprints registered successfully.")
     except ImportError as e:
         app.logger.error(f"❌ Error registering blueprints: {e}")
