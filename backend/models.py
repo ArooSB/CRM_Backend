@@ -178,3 +178,16 @@ class Analytics(db.Model):
             return (
                 f"<Revenue ID: {self.id}, Total Revenue: {self.total_revenue}, "
                 f"Period: {self.start_date} to {self.end_date}>")
+
+class WorkerCalendar(db.Model):
+    __tablename__ = "worker_calendar"
+
+    id = db.Column(db.Integer, primary_key=True)
+    worker_id = db.Column(db.Integer, db.ForeignKey('workers.id'), nullable=False)
+    event_title = db.Column(db.String(150), nullable=False)
+    event_date = db.Column(db.Date, nullable=False)
+    event_time = db.Column(db.Time, nullable=True)
+    description = db.Column(db.Text, nullable=True)
+
+    # Relationship
+    worker = db.relationship("Worker", backref="calendar_events")
